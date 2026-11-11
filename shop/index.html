@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop — AJG Food</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; background: #faf3e7; color: #3d2b1f; min-height: 100vh; }
+  header { background: #b06f2a; color: #fff; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header .logo { font-size: 28px; font-weight: bold; letter-spacing: 1px; }
+  header nav a { color: #fff; text-decoration: none; font-weight: bold; margin-left: 20px; }
+  header nav a:hover { text-decoration: underline; }
+  #cartBtn { background: #fff; color: #b06f2a; font-size: 18px; font-weight: bold; padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer; margin-left: 20px; }
+  #cartBtn:hover { background: #ffe9c4; }
+  h1 { text-align: center; font-size: 40px; color: #8a5a1d; margin: 40px 0 8px; }
+  .subtitle { text-align: center; color: #6b4a2f; font-size: 18px; margin-bottom: 30px; }
+  .menu { max-width: 900px; margin: 0 auto; padding: 20px; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .card { background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.12); width: 260px; padding: 28px 20px; text-align: center; }
+  .card .emoji { font-size: 64px; }
+  .card h2 { font-size: 24px; margin: 12px 0 6px; }
+  .card .price { font-size: 22px; font-weight: bold; color: #b06f2a; }
+  .card p { color: #7a5c40; margin: 8px 0 18px; }
+  .add { background: #b06f2a; color: #fff; font-size: 18px; font-weight: bold; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; }
+  .add:hover { background: #96591f; }
+  .warning { background: #fff3cd; color: #664d03; border-bottom: 2px solid #e6c34a; text-align: center; font-weight: bold; padding: 12px 20px; font-size: 17px; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 400; }
+  .modal.hidden { display: none; }
+  .modal-box { background: #fff; border-radius: 16px; padding: 28px 30px; width: 380px; max-width: 90vw; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+  .modal-box h2 { font-size: 28px; color: #8a5a1d; margin-bottom: 16px; }
+  .cart-line { display: flex; justify-content: space-between; font-size: 18px; padding: 8px 0; border-bottom: 1px solid #eee; }
+  #cartTotal { font-size: 22px; font-weight: bold; color: #b06f2a; margin: 16px 0; }
+  .modal-box .buy { background: #b06f2a; color: #fff; font-size: 18px; font-weight: bold; padding: 12px 28px; border-radius: 10px; border: none; cursor: pointer; margin-right: 10px; }
+  .modal-box .buy:hover { background: #96591f; }
+  .modal-box .buy:disabled { background: #ccc; cursor: default; }
+  .modal-box .close { background: #eee; color: #3d2b1f; font-size: 18px; font-weight: bold; padding: 12px 22px; border-radius: 10px; border: none; cursor: pointer; }
+  .modal-box .close:hover { background: #ddd; }
+  #cartMsg { font-size: 18px; color: #2f5d2a; margin: 8px 0 16px; }
+  footer { text-align: center; padding: 30px 20px 40px; color: #8a6a4d; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🍴 AJG Food</div>
+  <nav><a href="../">Home</a><a href="./">Shop</a><button id="cartBtn">🛒 Cart (<span id="cartCount">0</span>)</button></nav>
+</header>
+
+<div class="warning">⚠️ You can't actually buy anything here — this shop is fake.</div>
+
+<h1>Shop</h1>
+<p class="subtitle">Pick something tasty. (Fake shop — no real money, no real food.)</p>
+
+<div class="menu">
+  <div class="card">
+    <div class="emoji">🥐</div>
+    <h2>Croissant</h2>
+    <div class="price">$3</div>
+    <p>Buttery, flaky, baked fresh.</p>
+    <button class="add" data-name="Croissant" data-price="3">Add to Cart — $3</button>
+  </div>
+  <div class="card">
+    <div class="emoji">🍕</div>
+    <h2>Pizza</h2>
+    <div class="price">$8</div>
+    <p>Hot, cheesy, straight from the oven.</p>
+    <button class="add" data-name="Pizza" data-price="8">Add to Cart — $8</button>
+  </div>
+  <div class="card">
+    <div class="emoji">🧀</div>
+    <h2>Mac &amp; Cheese</h2>
+    <div class="price">$5</div>
+    <p>Creamy, cheesy, comfort in a bowl.</p>
+    <button class="add" data-name="Mac &amp; Cheese" data-price="5">Add to Cart — $5</button>
+  </div>
+</div>
+
+<div id="cartModal" class="modal hidden">
+  <div class="modal-box">
+    <h2>🛒 Your Cart</h2>
+    <div id="cartItems"></div>
+    <div id="cartTotal"></div>
+    <div id="cartMsg"></div>
+    <button id="buyBtn" class="buy">Buy</button>
+    <button id="closeCart" class="close">Close</button>
+  </div>
+</div>
+
+<footer>AJG Food — fake shop, real good taste.</footer>
+
+<script>
+  var cart = {}; // name -> { price, qty }
+
+  function cartCount() {
+    var n = 0;
+    for (var k in cart) n += cart[k].qty;
+    return n;
+  }
+  function cartTotal() {
+    var t = 0;
+    for (var k in cart) t += cart[k].price * cart[k].qty;
+    return t;
+  }
+  function updateCartBtn() {
+    document.getElementById('cartCount').textContent = cartCount();
+  }
+  function renderCart() {
+    var items = document.getElementById('cartItems');
+    var total = document.getElementById('cartTotal');
+    var msg = document.getElementById('cartMsg');
+    var buy = document.getElementById('buyBtn');
+    msg.textContent = '';
+    buy.style.display = '';
+    buy.disabled = false;
+    if (cartCount() === 0) {
+      items.innerHTML = '<p>Your cart is empty.</p>';
+      total.textContent = '';
+      buy.disabled = true;
+      return;
+    }
+    var html = '';
+    for (var name in cart) {
+      var line = cart[name];
+      html += '<div class="cart-line"><span>' + name + ' x' + line.qty + '</span><span>$' + (line.price * line.qty) + '</span></div>';
+    }
+    items.innerHTML = html;
+    total.textContent = 'Total: $' + cartTotal();
+  }
+
+  document.querySelectorAll('.add').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var name = btn.getAttribute('data-name');
+      var price = parseInt(btn.getAttribute('data-price'), 10);
+      if (!cart[name]) cart[name] = { price: price, qty: 0 };
+      cart[name].qty += 1;
+      updateCartBtn();
+    });
+  });
+
+  var modal = document.getElementById('cartModal');
+  document.getElementById('cartBtn').addEventListener('click', function () {
+    renderCart();
+    modal.classList.remove('hidden');
+  });
+  document.getElementById('closeCart').addEventListener('click', function () {
+    modal.classList.add('hidden');
+  });
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.classList.add('hidden');
+  });
+  document.getElementById('buyBtn').addEventListener('click', function () {
+    if (cartCount() === 0) return;
+    var total = cartTotal();
+    cart = {};
+    updateCartBtn();
+    document.getElementById('cartItems').innerHTML = '';
+    document.getElementById('cartTotal').textContent = '';
+    document.getElementById('cartMsg').textContent = '🎉 Purchased! Your order ($' + total + ') is on its way. (Just kidding — this is a fake shop, no real food is coming.)';
+    document.getElementById('buyBtn').style.display = 'none';
+  });
+</script>
+</body>
+</html>
